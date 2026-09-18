@@ -50,7 +50,39 @@
 
 ## 6. 판정 후 처리
 
-- 1차 통과 (4/5 이상) -> 다음 단계: DART 관계 데이터(특수관계자/주요계약 공시)로 진짜
-  그래프 구축 + Temporal GNN 검토
+- 1차 통과 (4/5 이상) -> 다음 단계: 실제 backtest 체크포인트(Addendum 참고) 통과 후에만
+  DART 관계 데이터로 진짜 그래프 구축 + Temporal GNN 검토
 - 1차 실패 -> `quant_sector_rotation`과 같은 결론(관계형 정보 자체가 이 파이프라인에서
   신호 없음)으로 기록하고, Temporal GNN 탐색 라인 종료
+
+## 7. 결과 (2026-09-18)
+
+5/5 시드 전부 양수 (AUC 차이 평균 +0.0076, std/mean 37.2%). 사전등록 기준(4/5, std/mean
+<50%) 통과.
+
+**판정: [1차 스크리닝 통과]**
+
+## Addendum (2026-09-18): backtest 체크포인트 삽입
+
+원래 6절은 "1차 통과 시 바로 GNN 검토"로 적어뒀으나, 이건 `learnings.md`의 "AUC 개선 ≠
+실전 손익 개선" 원칙과 어긋난다. 이 프로젝트에서 AUC 5/5 통과 후 백테스트/PBO 단계에서
+뒤집힌 전례가 다수(lag feature: AUC 5/5인데 vs_base_rate 0/5; 코스피/코스닥 PER: ablation
+4/5인데 백테스트 1/5; triple-barrier 풀링: 5-seed 통과 후 PBO 95.6%로 배포 부적합) 있으므로,
+GNN 투자 전에 같은 패턴이 재현되는지 먼저 확인한다.
+
+### 추가 단계
+
+BASE와 BASE+RELATED 각각으로 threshold=0.65(production 채택값) 진입 규칙의 실제 거래를
+생성하고, 거래비용(0.2% 왕복) 반영한 순수익을 고정 Buy & Hold 구간과 비교한다. 국면 배제
+재검증(집중 연도 제외)까지 포함.
+
+### 판정 기준
+
+- 5-seed 중 4개 이상에서 BASE+RELATED net_return > BASE net_return **그리고** > Buy & Hold
+- 집중 연도 제외 후에도 우위 유지 (국면 우연 배제)
+
+### 판정 후 처리 (갱신)
+
+- 통과 -> DART 관계 데이터로 진짜 그래프 구축 + Temporal GNN 검토
+- 실패 -> AUC 개선이 이번에도 실전 edge로 안 이어진 것으로 기록, Temporal GNN 탐색 라인
+  종료 (관계형 feature 자체는 향후 다른 조합에서 재사용 가능하도록 코드만 남김)
